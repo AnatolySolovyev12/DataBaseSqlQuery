@@ -13,10 +13,10 @@ int main(int argc, char *argv[])
 
     qDebug() << "clear - clear LOG file. exit - close application.\n";
 
-    QSqlDatabase mw_db = QSqlDatabase::addDatabase("QODBC"); // указываем какой использовать драйвер для подключения к БД и имя подключения. Если имя не задано то пор умолчанию подключаемся к этой базе. Вроде так.
+    QSqlDatabase mw_db = QSqlDatabase::addDatabase("QODBC"); // Для раблоты ODBC в Windows необходимо задвать пользовательский DNS в администрировании системы. Иначен не будет работать.
 
-    mw_db.setHostName("10.86.142.47");
-    mw_db.setDatabaseName("DBTESTZ");
+    mw_db.setHostName("10.86.142.47"); // хост где лежит БД
+    mw_db.setDatabaseName("DBTESTZ"); // указываем имя пользовательского DNS который был создан в системе ранее.
     mw_db.setUserName("solexp");
     mw_db.setPassword("RootToor#");
 
