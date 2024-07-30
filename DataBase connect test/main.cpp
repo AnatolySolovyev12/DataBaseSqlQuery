@@ -3,6 +3,7 @@
 #include <QSqlDatabase>
 #include <qsqlerror.h>
 #include <QSqlQuery>
+#include <QTime>
 
 int main(int argc, char *argv[])
 {
@@ -12,6 +13,8 @@ int main(int argc, char *argv[])
     QTextStream in(stdin);
 
     qDebug() << "clear - clear LOG file. exit - close application.\n";
+
+    qDebug() << "LOG file was created in the root directory of the program.\n";
 
     QSqlDatabase mw_db = QSqlDatabase::addDatabase("QODBC"); // Для раблоты ODBC в Windows необходимо задвать пользовательский DNS в администрировании системы. Иначен не будет работать.
 
@@ -29,8 +32,6 @@ int main(int argc, char *argv[])
         any2 = mw_db.lastError().driverText();
 
         qDebug() << "Cannot open database: " << mw_db.lastError();
-
-        qDebug() << "LOG file was created in the root directory of the program.";
        
         QFile file("LOG.txt");
         file.open(QIODevice::WriteOnly | QIODevice::Append);
@@ -47,44 +48,76 @@ int main(int argc, char *argv[])
         qDebug() << "DataBase is CONNECT.";
 
     QSqlQuery query;
-    QString str_t;
+    QString number;
+    QString queryString;
+    QString result;
 
     do {
 
-        str_t = in.readLine(); // записываем данные из потока цельной строкой в переменную.
+        QDate curDate = QDate::currentDate();
+        curDate = curDate.addDays(-1);
+        QTime curTime = QTime::currentTime();
+        QString timeInQuery = curDate.toString("yyyy-MM-dd");
 
-        query.exec(str_t); // Отправляем запрос на количество записей
+        number = "'" + in.readLine() + "'"; // записываем данные из потока цельной строкой в переменную.
 
-        while (query.next())
-        {
-            str_t = query.value(0).toString();
+        if (number == "''")
+            continue;
 
-            qDebug() << str_t;
+        qDebug() << number;
 
-            QFile file("LOG.txt");
-            file.open(QIODevice::WriteOnly | QIODevice::Append);
-            QTextStream out(&file); // поток записываемых данных направляем в файл
-
-            // Для записи данных в файл используем оператор <<
-            out << str_t << Qt::endl;
-
-            file.close();
-        }
-
-        if (str_t == "exit")
+        if (number == "'exit'")
         {
             mw_db.removeDatabase("DBTESTZ");
             return 1;
         }
 
-        if (str_t == "clear")
+        if (number == "'clear'")
         {
             QFile file("LOG.txt");
             file.open(QIODevice::WriteOnly | QIODevice::Truncate);
             file.close();
+            continue;
         }
 
-    } while (true);
+        queryString = "select IDOBJECT_PARENT from dbo.PROPERTIES where PROPERTY_VALUE = " + number;
 
+        query.exec(queryString); // Отправляем запрос на количество записей
+
+        query.next();
+
+        int iD =  query.value(0).toInt() - 1;
+
+        queryString = "select VALUE_METERING from dbo.METERINGS where  IDOBJECT = '" + number.setNum(iD) + "' AND IDTYPE_OBJECT = '1201001' AND IDOBJECT_AGGREGATE = '1' AND TIME_END = '" + timeInQuery +" 19:00:00.0000000' AND VALUE_METERING != '0'";
+
+        query.exec(queryString);
+
+        query.next();
+
+        result += "Day = " + query.value(0).toString();
+
+        queryString = "select VALUE_METERING from dbo.METERINGS where  IDOBJECT = '" + number.setNum(iD) + "' AND IDTYPE_OBJECT = '1202001' AND IDOBJECT_AGGREGATE = '1' AND TIME_END = '" + timeInQuery + " 19:00:00.0000000' AND VALUE_METERING != '0'";
+
+        query.exec(queryString);
+
+        query.next();
+
+        result += "   Night = " + query.value(0).toString();
+
+        qDebug() << result;
+
+        QFile file("LOG.txt");
+        file.open(QIODevice::WriteOnly | QIODevice::Append);
+        QTextStream out(&file); // поток записываемых данных направляем в файл
+
+        // Для записи данных в файл используем оператор <<
+        out << result << Qt::endl;
+
+        file.close();
+
+        result = "";
+
+    } while (true);
+    
     return a.exec();
 }
