@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         QString any;
         QString any2;
 
-        any = mw_db.lastError().databaseText();
+        any = mw_db.lastError().databaseText(); // если что-то пойдёт не так то пишем это в переменные
         any2 = mw_db.lastError().driverText();
 
         qDebug() << "Cannot open database: " << mw_db.lastError();
@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
     do {
 
         QDate curDate = QDate::currentDate();
-        curDate = curDate.addDays(-1);
+        curDate = curDate.addDays(-1); // то что в Заре на сегодня в БД на вчера. Поэтому вычетаем день от текущей даты для последующего запроса
         QTime curTime = QTime::currentTime();
-        QString timeInQuery = curDate.toString("yyyy-MM-dd");
+        QString timeInQuery = curDate.toString("yyyy-MM-dd"); // Разворачиваем формат даты так как в БД.
 
         number = "'" + in.readLine() + "'"; // записываем данные из потока цельной строкой в переменную.
 
@@ -68,27 +68,27 @@ int main(int argc, char *argv[])
 
         if (number == "'exit'")
         {
-            mw_db.removeDatabase("DBTESTZ");
+            mw_db.removeDatabase("DBTESTZ"); // Подключаем пользовательский DNS с ODBC
             return 1;
         }
 
         if (number == "'clear'")
         {
             QFile file("LOG.txt");
-            file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+            file.open(QIODevice::WriteOnly | QIODevice::Truncate); // Truncate вычищает файл.
             file.close();
             continue;
         }
 
-        queryString = "select IDOBJECT_PARENT from dbo.PROPERTIES where PROPERTY_VALUE = " + number;
+        queryString = "select IDOBJECT_PARENT from dbo.PROPERTIES where PROPERTY_VALUE = " + number; // запрашиваем нужный нам ID поо номеру прибора
 
         query.exec(queryString); // Отправляем запрос на количество записей
 
         query.next();
 
-        int iD =  query.value(0).toInt() - 1;
-
-        queryString = "select VALUE_METERING from dbo.METERINGS where  IDOBJECT = '" + number.setNum(iD) + "' AND IDTYPE_OBJECT = '1201001' AND IDOBJECT_AGGREGATE = '1' AND TIME_END = '" + timeInQuery +" 19:00:00.0000000' AND VALUE_METERING != '0'";
+        int iD =  query.value(0).toInt() - 1; // ID с показаниями на единицу меньше чем мы выявили по номеру счётчика.
+        
+        queryString = "select VALUE_METERING from dbo.METERINGS where  IDOBJECT = '" + number.setNum(iD) + "' AND IDTYPE_OBJECT = '1201001' AND IDOBJECT_AGGREGATE = '1' AND TIME_END = '" + timeInQuery +" 19:00:00.0000000' AND VALUE_METERING != '0'"; // запрашиваем показаний без всякой лишей информации
 
         query.exec(queryString);
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         qDebug() << result;
 
         QFile file("LOG.txt");
-        file.open(QIODevice::WriteOnly | QIODevice::Append);
+        file.open(QIODevice::WriteOnly | QIODevice::Append); // Append - для добавления в конце без перезаписи в начале.
         QTextStream out(&file); // поток записываемых данных направляем в файл
 
         // Для записи данных в файл используем оператор <<
